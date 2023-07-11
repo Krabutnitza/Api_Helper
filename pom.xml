@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>Api_Helper</groupId>
@@ -14,6 +15,9 @@
         <citrus.version>3.2.1</citrus.version>
         <slf4j.version>1.7.30</slf4j.version>
         <log4j2.version>2.15.0</log4j2.version>
+
+        <thread.count>5</thread.count>
+        <fork.count>0</fork.count>
     </properties>
 
     <dependencies>
@@ -65,6 +69,27 @@
             <artifactId>log4j-slf4j-impl</artifactId>
             <version>${log4j2.version}</version>
         </dependency>
+        <dependency>
+            <groupId>jakarta.xml.ws</groupId>
+            <artifactId>jakarta.xml.ws-api</artifactId>
+            <version>2.3.2</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.github.tomakehurst</groupId>
+            <artifactId>wiremock</artifactId>
+            <version>2.27.2</version>
+        </dependency>
+        <dependency>
+            <groupId>org.assertj</groupId>
+            <artifactId>assertj-core</artifactId>
+            <version>3.22.0</version>
+        </dependency>
+        <dependency>
+            <groupId>org.mockito</groupId>
+            <artifactId>mockito-core</artifactId>
+            <version>4.3.1</version>
+        </dependency>
     </dependencies>
 
     <build>
@@ -92,8 +117,14 @@
                 <artifactId>maven-surefire-plugin</artifactId>
                 <version>2.22.2</version>
                 <configuration>
-                    <failIfNoTests>false</failIfNoTests>
-                    <workingDirectory>${project.build.directory}</workingDirectory>
+                    <parallel>classes</parallel>
+                    <threadCount>${thread.count}</threadCount>
+                    <forkCount>${fork.count}</forkCount>
+                    <trimStackTrace>false</trimStackTrace>
+                    <systemProperties>
+                        <wiremock.hostname>http://localhost:8080</wiremock.hostname>
+                        <real.service.hostname>http://localhost:8190</real.service.hostname>
+                    </systemProperties>
                 </configuration>
             </plugin>
 
@@ -107,6 +138,29 @@
                         <goals>
                             <goal>integration-test</goal>
                             <goal>verify</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+
+            <plugin>
+                <groupId>org.apache.cxf</groupId>
+                <artifactId>cxf-codegen-plugin</artifactId>
+                <version>3.3.4</version>
+                <executions>
+                    <execution>
+                        <id>generate-sources-api</id>
+                        <phase>generate-sources</phase>
+                        <configuration>
+                            <sourceRoot>${basedir}/src/test/java</sourceRoot>
+                            <wsdlOptions>
+                                <wsdlOption>
+                                    <wsdl>https://www.dataaccess.com/webservicesserver/numberconversion.wso?WSDL</wsdl>
+                                </wsdlOption>
+                            </wsdlOptions>
+                        </configuration>
+                        <goals>
+                            <goal>wsdl2java</goal>
                         </goals>
                     </execution>
                 </executions>
